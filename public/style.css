@@ -143,7 +143,7 @@ label {
 }
 
 .mapdiv{
-    background-image: url("images/map.png");
+    background-image: url("map.png");
     background-size: 100% 100%;
     background-repeat: no-repeat;
 
@@ -165,7 +165,7 @@ label {
 
 
 .mapvdiv{
-    background-image: url("images/mapv.png");
+    background-image: url("mapv.png");
     background-size: cover;
     background-repeat: no-repeat;
 

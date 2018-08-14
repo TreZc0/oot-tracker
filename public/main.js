@@ -1,15 +1,42 @@
-var medallions = [];
 var dungeonImg = ['Unknown', 'Slingshot0', 'Bombs0', 'Boomerang', 'Bow0', 'Hammer', 'Hookshot0', 'HoverBoots', 'MirrorShield']
 ganonlogic = 'Open';
-showprizes = false;
 
 var itemGrid = [];
 var itemLayout = [];
 
-var editmode = false;
-var selected = {};
-
 var dungeonSelect = 0;
+
+var chestsopenedInit = [];
+for(var i = 0; i < chests.length; i++) {
+    chestsopenedInit.push(false);
+}
+
+var trackerOptions = {
+  showprizes: true,
+  editmode: false,
+  selected: {}
+};
+
+var trackerData = {
+  items: itemsInit,
+  dungeonchests: dungeonchestsInit,
+  medallions: medallionsInit,
+  chestsopened: chestsopenedInit
+};
+
+
+var cookiekeys = ['map', 'iZoom', 'mZoom', 'mOrien', 'mPos', 'glogic', 'prize', 'items'];
+var cookieDefault = {
+    map:1,
+    iZoom:100,
+    mZoom:100,
+    mPos:0,
+    glogic:'Open',
+    prize:1,
+    items:defaultItemGrid
+}
+
+var cookielock = false;
 
 function setCookie(obj) {
     var d = new Date();
@@ -19,7 +46,8 @@ function setCookie(obj) {
     document.cookie = "key=" + val + ";" + expires + ";path=/";
 }
 
-function getCookie() {
+function getConfigObjectFromCookie() {
+
     var name = "key=";
     var ca = document.cookie.split(';');
     for(var i = 0; i < ca.length; i++) {
@@ -34,114 +62,140 @@ function getCookie() {
     return {};
 }
 
-var cookiekeys = ['map', 'iZoom', 'mZoom', 'mOrien', 'mPos', 'glogic', 'prize', 'items'];
-var cookieDefault = {
-    map:1,
-    iZoom:100,
-    mZoom:100,
-    mPos:0,
-    glogic:'Open',
-    prize:1,
-    items:defaultItemGrid
-}
-
-var cookielock = false;
 function loadCookie() {
     if (cookielock)
         return;
+
     cookielock = true;
 
-    cookieobj = getCookie();
+    cookieobj = getConfigObjectFromCookie();
+    setConfigObject(cookieobj);
 
+    cookielock = false;
+}
+
+function setConfigObject(configobj)
+{
     cookiekeys.forEach(function (key) {
-        if (cookieobj[key] === undefined) {
-            cookieobj[key] = cookieDefault[key];
+        if (configobj[key] === undefined) {
+            configobj[key] = cookieDefault[key];
         }
     });
 
-    initGridRow(JSON.parse(JSON.stringify(cookieobj.items)));
+    initGridRow(JSON.parse(JSON.stringify(configobj.items)));
 
-    document.getElementsByName('showmap')[0].checked = !!cookieobj.map;
+    document.getElementsByName('showmap')[0].checked = !!configobj.map;
     document.getElementsByName('showmap')[0].onchange();
-    document.getElementsByName('itemdivsize')[0].value = cookieobj.iZoom;
+    document.getElementsByName('itemdivsize')[0].value = configobj.iZoom;
     document.getElementsByName('itemdivsize')[0].onchange();
-    document.getElementsByName('mapdivsize')[0].value = cookieobj.mZoom;
+    document.getElementsByName('mapdivsize')[0].value = configobj.mZoom;
     document.getElementsByName('mapdivsize')[0].onchange();
 
-    document.getElementsByName('mapposition')[cookieobj.mPos].click();
+    document.getElementsByName('mapposition')[configobj.mPos].click();
 
-    document.getElementsByName('showprizes')[0].checked = !!cookieobj.prize;
+    document.getElementsByName('showprizes')[0].checked = !!configobj.prize;
     document.getElementsByName('showprizes')[0].onchange();
 
     for (rbuttonID in document.getElementsByName('ganonlogic')) {
         rbutton = document.getElementsByName('ganonlogic')[rbuttonID]
-        if (rbutton.value == cookieobj.glogic)
+        if (rbutton.value == configobj.glogic)
             rbutton.click();
     }
+}
 
-    cookielock = false;
+function updateConfigFromFirebase(configobj) {
+    var existingConfig = getConfigObjectFromCookie();
+    if(!existingConfig || !existingConfig.ts) {
+        console.log("Overwriting config with Firebase values");
+        setConfigObject(configobj);
+        saveCookie();
+    }
+    else {
+        console.log("Ignoring Firebase config values due to older timestamp");
+    }
+}
+
+function saveConfigToFirebase() {
+    var existingConfig = getConfigObject();
+
+    rootRef.child('config').set(existingConfig);
+
+    console.log("Pushed config to firebase");
 }
 
 function saveCookie() {
+
     if (cookielock)
         return;
     cookielock = true;
 
-    cookieobj = {};
+    cookieobj = getConfigObject();
+    setCookie(cookieobj);
 
-    cookieobj.map = document.getElementsByName('showmap')[0].checked ? 1 : 0;
-    cookieobj.iZoom = document.getElementsByName('itemdivsize')[0].value;
-    cookieobj.mZoom = document.getElementsByName('mapdivsize')[0].value;
+    cookielock = false
+}
 
-    cookieobj.mPos = document.getElementsByName('mapposition')[1].checked ? 1 : 0;
+function getConfigObject()
+{
+    configobj = {};
 
-    cookieobj.prize = document.getElementsByName('showprizes')[0].checked ? 1 : 0;
+    configobj.map = document.getElementsByName('showmap')[0].checked ? 1 : 0;
+    configobj.iZoom = document.getElementsByName('itemdivsize')[0].value;
+    configobj.mZoom = document.getElementsByName('mapdivsize')[0].value;
+
+    configobj.mPos = document.getElementsByName('mapposition')[1].checked ? 1 : 0;
+
+    configobj.prize = document.getElementsByName('showprizes')[0].checked ? 1 : 0;
 
     for (rbuttonID in document.getElementsByName('ganonlogic')) {
         rbutton = document.getElementsByName('ganonlogic')[rbuttonID]
         if (rbutton.checked)
-            cookieobj.glogic = rbutton.value;
+            configobj.glogic = rbutton.value;
     }
 
-    cookieobj.items = JSON.parse(JSON.stringify(itemLayout));
+    configobj.items = JSON.parse(JSON.stringify(itemLayout));
 
-    setCookie(cookieobj);
-
-    cookielock = false;
+    return configobj;
 }
 
 // Event of clicking a chest on the map
 function toggleChest(x){
-    chests[x].isOpened = !chests[x].isOpened;
-    if(chests[x].isOpened)
-        document.getElementById(x).className = "mapspan chest opened";
-    else
-        document.getElementById(x).className = "mapspan chest " + chests[x].isAvailable();
+    rootRef.child('chestsopened').child(x).set(!trackerData.chestsopened[x]);    
+}
+
+function refreshChests() {
+
+     for(k=0; k<chests.length; k++){
+        if(trackerData.chestsopened[k])
+            document.getElementById(k).className = "mapspan chest opened";
+        else
+            document.getElementById(k).className = "mapspan chest " + chests[k].isAvailable();
+     }
 }
 
 // Highlights a chest location
 function highlight(x){
-    document.getElementById(x).style.backgroundImage = "url(images/highlighted.png)";
+    document.getElementById(x).style.backgroundImage = "url(highlighted.png)";
 }
 
 function unhighlight(x){
-    document.getElementById(x).style.backgroundImage = "url(images/poi.png)";
+    document.getElementById(x).style.backgroundImage = "url(poi.png)";
 }
 
 // Highlights a chest location (but for dungeons)
 function highlightDungeon(x){
-    document.getElementById("dungeon"+x).style.backgroundImage = "url(images/highlighted.png)";
+    document.getElementById("dungeon"+x).style.backgroundImage = "url(highlighted.png)";
 }
 
 function unhighlightDungeon(x){
     if (dungeonSelect != x)
-        document.getElementById("dungeon"+x).style.backgroundImage = "url(images/poi.png)";
+        document.getElementById("dungeon"+x).style.backgroundImage = "url(poi.png)";
 }
 
 function clickDungeon(d){
-    document.getElementById("dungeon"+dungeonSelect).style.backgroundImage = "url(images/poi.png)";
+    document.getElementById("dungeon"+dungeonSelect).style.backgroundImage = "url(poi.png)";
     dungeonSelect = d;
-    document.getElementById("dungeon"+dungeonSelect).style.backgroundImage = "url(images/highlighted.png)";
+    document.getElementById("dungeon"+dungeonSelect).style.backgroundImage = "url(highlighted.png)";
 
     document.getElementById('submaparea').innerHTML = dungeons[dungeonSelect].name;
     document.getElementById('submaparea').className = "DC" + dungeons[dungeonSelect].isBeatable();
@@ -177,6 +231,8 @@ function toggleDungeonChest(sender, d, c){
     else
         sender.className = "DCunavailable";
 
+    //rootRef.child('dungeonchests').child(x).set(!trackerData.chestsopened[x]);    
+
     updateMap();
 }
 
@@ -199,7 +255,7 @@ function setOrder(H) {
 }
 
 function showPrizes(sender) {
-    showprizes = sender.checked;
+    trackerOptions.showprizes = sender.checked;
     updateGridItemAll();
     saveCookie();
 }
@@ -222,7 +278,7 @@ function setZoom(target, sender) {
 }
 
 function showSettings(sender) {
-    if (editmode) {
+    if (trackerOptions.editmode) {
         var r, c;
         var startdraw = false;
         for (r = 7; r >= 0 && !startdraw; r--) {
@@ -249,7 +305,7 @@ function showSettings(sender) {
             itemGrid[r]['button'].style.display = 'none';
         }
 
-        editmode = false;
+        trackerOptions.editmode = false;
         updateGridItemAll();
         showTracker('mapdiv', document.getElementsByName('showmap')[0]);
         document.getElementById('itemconfig').style.display = 'none';
@@ -304,7 +360,7 @@ function EditMode() {
         itemGrid[r]['button'].style.display = '';
     }
 
-    editmode = true;
+    trackerOptions.editmode = true;
     updateGridItemAll();
     showTracker('mapdiv', {checked:false});
     document.getElementById('settings').style.display = 'none';
@@ -381,15 +437,15 @@ function createItemTracker(sender) {
 function updateGridItem(row, index) {
     var item = itemLayout[row][index];
 
-    if (editmode) {
+    if (trackerOptions.editmode) {
         if (!item || item == 'blank') {
-            itemGrid[row][index]['item'].style.backgroundImage = ("url(images/blank.png)");
+            itemGrid[row][index]['item'].style.backgroundImage = ("url(blank.png)");
         }
-        else if((typeof items[item]) == "boolean"){
-            itemGrid[row][index]['item'].style.backgroundImage = "url(images/" + item + ".png)";
+        else if((typeof trackerData.items[item]) == "boolean"){
+            itemGrid[row][index]['item'].style.backgroundImage = "url(" + item + ".png)";
         }
         else{
-            itemGrid[row][index]['item'].style.backgroundImage = "url(images/" + item + itemsMax[item] + ".png)";
+            itemGrid[row][index]['item'].style.backgroundImage = "url(" + item + itemsMax[item] + ".png)";
         }
 
         itemGrid[row][index]['item'].style.border = '1px solid white';
@@ -406,18 +462,18 @@ function updateGridItem(row, index) {
         return;
     }
 
-    if((typeof items[item]) == "boolean"){
-        itemGrid[row][index]['item'].style.backgroundImage = "url(images/" + item + ".png)";
+    if((typeof trackerData.items[item]) == "boolean"){
+        itemGrid[row][index]['item'].style.backgroundImage = "url(" + item + ".png)";
     }
     else{
-        itemGrid[row][index]['item'].style.backgroundImage = "url(images/" + item + items[item] + ".png)";
+        itemGrid[row][index]['item'].style.backgroundImage = "url(" + item + trackerData.items[item] + ".png)";
     }
 
-    itemGrid[row][index]['item'].className = "griditem " + (!!items[item]);
+    itemGrid[row][index]['item'].className = "griditem " + (!!trackerData.items[item]);
 
-    if (medallions[item] !== undefined){
-        if (showprizes)
-            itemGrid[row][index][3].style.backgroundImage = "url(images/" + dungeonImg[medallions[item]] + ".png)";
+    if (trackerData.medallions[item] !== undefined){
+        if (trackerOptions.showprizes)
+            itemGrid[row][index][3].style.backgroundImage = "url(" + dungeonImg[trackerData.medallions[item]] + ".png)";
         else
             itemGrid[row][index][3].style.backgroundImage = "";           
     }
@@ -440,17 +496,6 @@ function setGridItem(item, row, index) {
 }
 
 function initGridRow(itemsets) {
-    medallions = {
-        ForestMedallion: 0,
-        FireMedallion: 0,
-        WaterMedallion: 0,
-        ShadowMedallion: 0,
-        SpiritMedallion: 0,
-        LightMedallion: 0,
-        KokiriEmerald: 0,
-        GoronRuby: 0,
-        ZoraSapphire: 0,
-    };
 
     var r, c;
     var startdraw = false;
@@ -494,24 +539,24 @@ function initGridRow(itemsets) {
 }
 
 function gridItemClick(row, col, corner) {
-    if (editmode) {		
-        if (selected.item) {
-            document.getElementById(selected.item).style.border = '1px solid white';
+    if (trackerOptions.editmode) {		
+        if (trackerOptions.selected.item) {
+            document.getElementById(trackerOptions.selected.item).style.border = '1px solid white';
             var old = itemLayout[row][col];
 
-            if (old == selected.item) {
-                selected = {};
+            if (old == trackerOptions.selected.item) {
+                trackerOptions.selected = {};
                 return;
             }
 
-            if (selected.item != 'blank') {
-                document.getElementById(selected.item).style.opacity = 0.25;
+            if (trackerOptions.selected.item != 'blank') {
+                document.getElementById(trackerOptions.selected.item).style.opacity = 0.25;
 
                 var r,c;
                 var found = false;
                 for (r = 0; r < 8; r++) {
                     for (c = 0; c < 7; c++) {
-                        if (itemLayout[r][c] == selected.item) {
+                        if (itemLayout[r][c] == trackerOptions.selected.item) {
                             itemLayout[r][c] = 'blank';
                             found = true;
                             break;
@@ -523,58 +568,60 @@ function gridItemClick(row, col, corner) {
                 }
             }
 
-            itemLayout[row][col] = selected.item;
+            itemLayout[row][col] = trackerOptions.selected.item;
             updateGridItem(row, col);
 
             document.getElementById(old).style.opacity = 1;
 
-            selected = {};
-        } else if (selected.row !== undefined) {
-            itemGrid[selected.row][selected.col]['item'].style.border = '1px solid white';
+            trackerOptions.selected = {};
+        } else if (trackerOptions.selected.row !== undefined) {
+            itemGrid[trackerOptions.selected.row][trackerOptions.selected.col]['item'].style.border = '1px solid white';
 
             var temp = itemLayout[row][col]
-            itemLayout[row][col] = itemLayout[selected.row][selected.col];
-            itemLayout[selected.row][selected.col] = temp;
+            itemLayout[row][col] = itemLayout[trackerOptions.selected.row][trackerOptions.selected.col];
+            itemLayout[trackerOptions.selected.row][trackerOptions.selected.col] = temp;
             updateGridItem(row, col);
-            updateGridItem(selected.row, selected.col);
+            updateGridItem(trackerOptions.selected.row, trackerOptions.selected.col);
 
             selected = {};
         } else {
             itemGrid[row][col]['item'].style.border = '3px solid yellow';
-            selected = {row:row, col:col};		
+            trackerOptions.selected = {row:row, col:col};		
         }
         return;
     }
 
     var item = itemLayout[row][col];
 
-    if(medallions[item] !== undefined && showprizes){
+    if(trackerData.medallions[item] !== undefined && trackerOptions.showprizes){
         if (corner == 3) {
-            medallions[item]++;
-            if (medallions[item] >=  9)
-                medallions[item] = 0;
+            var newVal = trackerData.medallions[item] + 1;
+                if(newVal >= 9){
+                    newVal = 0;
+                }
+
+            rootRef.child('medallions').child(item).set(newVal);
         } 
         else {
-            items[item] = !items[item];
+            rootRef.child('items').child(item).set(!trackerData.items[item]);
         }
     }
-    else if((typeof items[item]) == "boolean"){
-        items[item] = !items[item];
+    else if((typeof trackerData.items[item]) == "boolean"){
+        rootRef.child('items').child(item).set(!trackerData.items[item]);
     }
     else{
-        items[item]++;
-        if(items[item] > itemsMax[item]){
-            items[item] = itemsMin[item];
+        var newVal = trackerData.items[item] + 1;
+        if(newVal > itemsMax[item]){
+            newVal = itemsMin[item];
         }
-    }
 
-    updateMap()
-    updateGridItem(row,col);
+        rootRef.child('items').child(item).set(newVal);
+    }
 }
 
 function updateMap() {
     for(k=0; k<chests.length; k++){
-        if(!chests[k].isOpened)
+        if(!trackerData.chestsopened[k])
             document.getElementById(k).className = "mapspan chest " + chests[k].isAvailable();
     }
     for(k=0; k<dungeons.length; k++){
@@ -618,16 +665,16 @@ function updateMap() {
 function itemConfigClick (sender) {
     var item = sender.id;
 
-    if (selected.item) {
-        document.getElementById(selected.item).style.border = '0px';
+    if (trackerOptions.trackerOptions.selected.item) {
+        document.getElementById(trackerOptions.trackerOptions.selected.item).style.border = '0px';
         sender.style.border = '3px solid yellow';
-        selected = {item:item};	
-    } else if (selected.row !== undefined) {
-        itemGrid[selected.row][selected.col]['item'].style.border = '1px solid white';
-        var old = itemLayout[selected.row][selected.col];
+        trackerOptions.trackerOptions.selected = {item:item};	
+    } else if (trackerOptions.trackerOptions.selected.row !== undefined) {
+        itemGrid[trackerOptions.trackerOptions.selected.row][trackerOptions.trackerOptions.selected.col]['item'].style.border = '1px solid white';
+        var old = itemLayout[trackerOptions.trackerOptions.selected.row][trackerOptions.trackerOptions.selected.col];
 
         if (old == item) {
-            selected = {};
+            trackerOptions.trackerOptions.selected = {};
             return;
         }
 
@@ -651,15 +698,15 @@ function itemConfigClick (sender) {
             }
         }
 
-        itemLayout[selected.row][selected.col] = item;
-        updateGridItem(selected.row, selected.col);
+        itemLayout[trackerOptions.selected.row][trackerOptions.selected.col] = item;
+        updateGridItem(trackerOptions.selected.row, trackerOptions.selected.col);
 
         document.getElementById(old).style.opacity = 1;
 
-        selected = {};
+        trackerOptions.selected = {};
     } else {
         sender.style.border = '3px solid yellow';
-        selected = {item:item}
+        trackerOptions.selected = {item:item}
     }
 }
 
@@ -669,7 +716,7 @@ function populateMapdiv() {
     // Initialize all chests on the map
     for(k=0; k<chests.length; k++){
         var s = document.createElement('span');
-        s.style.backgroundImage = 'url(images/poi.png)';
+        s.style.backgroundImage = 'url(poi.png)';
         s.style.color = 'black';
         s.id = k;
         s.onclick = new Function('toggleChest('+k+')');
@@ -677,7 +724,7 @@ function populateMapdiv() {
         s.onmouseout = new Function('unhighlight('+k+')');
         s.style.left = chests[k].x;
         s.style.top = chests[k].y;
-        if(chests[k].isOpened)
+        if(trackerData.chestsopened[k])
             s.className = "mapspan chest opened";
         else
             s.className = "mapspan chest " + chests[k].isAvailable();
@@ -693,7 +740,7 @@ function populateMapdiv() {
     // Dungeon bosses & chests
     for(k=0; k<dungeons.length; k++){
         s = document.createElement('span');
-        s.style.backgroundImage = 'url(images/poi.png)';
+        s.style.backgroundImage = 'url(poi.png)';
         s.id = 'dungeon' + k;
 
         s.onclick = new Function('clickDungeon('+k+')');
@@ -733,7 +780,7 @@ function populateMapdiv() {
 
     document.getElementById('submaparea').innerHTML = dungeons[dungeonSelect].name;
     document.getElementById('submaparea').className = "DC" + dungeons[dungeonSelect].isBeatable();
-    document.getElementById("dungeon"+dungeonSelect).style.backgroundImage = "url(images/highlighted.png)";
+    document.getElementById("dungeon"+dungeonSelect).style.backgroundImage = "url(highlighted.png)";
     for (var key in dungeons[dungeonSelect].chestlist) {
         var s = document.createElement('li');
         s.innerHTML = key
@@ -761,7 +808,7 @@ function populateItemconfig() {
 
     var row;
 
-    for (var key in items) {
+    for (var key in trackerData.items) {
         if (i % 10 == 0){
             row = document.createElement('tr');
             grid.appendChild(row);
@@ -773,11 +820,11 @@ function populateItemconfig() {
         rowitem.id = key;
         rowitem.style.backgroundSize = '100% 100%';
         rowitem.onclick = new Function('itemConfigClick(this)');
-        if((typeof items[key]) == "boolean"){
-            rowitem.style.backgroundImage = "url(images/" + key + ".png)";
+        if((typeof trackerData.items[key]) == "boolean"){
+            rowitem.style.backgroundImage = "url(" + key + ".png)";
         }
         else{
-            rowitem.style.backgroundImage = "url(images/" + key + itemsMax[key] + ".png)";
+            rowitem.style.backgroundImage = "url(" + key + itemsMax[key] + ".png)";
         }
         row.appendChild(rowitem);
     }		
@@ -788,46 +835,140 @@ function isBridgeOpen() {
         case "Open":
             return true;
         case "Vanilla":
-            return (items['ShadowMedallion'] && items['SpiritMedallion']);
-        case "Medallions":
-            return (items['ForestMedallion'] && items['FireMedallion'] && 
-                items['WaterMedallion'] && items['LightMedallion'] && 
-                items['ShadowMedallion'] && items['SpiritMedallion']);
+            return (trackerData.items['ShadowMedallion'] && trackerData.items['SpiritMedallion']);
+        case "medallions":
+            return (trackerData.items['ForestMedallion'] && trackerData.items['FireMedallion'] && 
+                trackerData.items['WaterMedallion'] && trackerData.items['LightMedallion'] && 
+                trackerData.items['ShadowMedallion'] && trackerData.items['SpiritMedallion']);
         case "Dungeons":
-            return (items['KokiriEmerald'] && items['GoronRuby'] && items['ZoraSapphire'] && 
-                items['ForestMedallion'] && items['FireMedallion'] && 
-                items['WaterMedallion'] && items['LightMedallion'] && 
-                items['ShadowMedallion'] && items['SpiritMedallion']);
+            return (trackerData.items['KokiriEmerald'] && trackerData.items['GoronRuby'] && trackerData.items['ZoraSapphire'] && 
+                trackerData.items['ForestMedallion'] && trackerData.items['FireMedallion'] && 
+                trackerData.items['WaterMedallion'] && trackerData.items['LightMedallion'] && 
+                trackerData.items['ShadowMedallion'] && trackerData.items['SpiritMedallion']);
     }
     return false;
 }
 
-function init() {
+function enterPasscode() {
+    var passcode = document.getElementById('entryPasscodeInput').value;
+    rootRef.child('editors').child(uid).set(passcode, function(error) {
+        if(error) {
+            console.log("Did not add to editors");
+            console.log(error);
+        }
+        else {
+            console.log("Added to editors successfully");
+        }
+    });
+}
+
+function createRoom() {
+    var editors = {};
+    var passcode = document.getElementById('passcodeInput').value;
+    editors[uid] = true;
+    rootRef.set({
+        owner: uid,
+        editors: editors,
+        passcode: passcode,
+        items: itemsInit,
+        dungeonchests: dungeonchestsInit,
+        medallions: medallionsInit,
+        chestsopened: chestsopenedInit
+    });
+}
+
+function resetFirebase() {
+    rootRef.child('items').set(itemsInit);
+    rootRef.child('dungeonchests').set(dungeonchestsInit);
+    rootRef.child('medallions').set(medallionsInit);
+    rootRef.child('chestsopened').set(chestsopenedInit);
+}
+
+function useTourneyConfig() {
+  firebase.database().ref('games/tourney-layout/config').once('value', function(snapshot) {
+    let val = snapshot.val();
+    updateConfigFromFirebase(val);
+    saveConfigToFirebase();
+  });
+}
+
+function initTracker() {
     createItemTracker(document.getElementById('itemdiv'));
     populateMapdiv();
     populateItemconfig();
 
     loadCookie();
-    saveCookie();  
+    saveCookie(); //maybe delete
+
+    window.document.title = roomid + " - " + window.document.title;
+
+    rootRef.child('items').on('value', function(snapshot) {
+        trackerData.items = snapshot.val();
+        updateAll();
+        document.getElementById('createRoomPanel').hidden = !!trackerData.items;
+    });
+    rootRef.child('dungeonchests').on('value', function(snapshot) {
+        trackerData.dungeonchests = snapshot.val();
+        updateAll();
+    });
+    rootRef.child('medallions').on('value', function(snapshot) {
+        trackerData.medallions = snapshot.val();
+        updateAll();
+    });
+    rootRef.child('chestsopened').on('value', function(snapshot) {
+        trackerData.chestsopened = snapshot.val();
+        updateAll();
+    });
+    rootRef.child('config').on('value', function(snapshot) {
+       if(snapshot.val()) updateConfigFromFirebase(snapshot.val());
+}); 
+}
+
+function updateAll() {
+    if(trackerData.items && trackerData.dungeonchests && trackerData.medallions && trackerData.chestsopened) {
+      refreshMap();
+    }
+}
+
+function refreshMap() {
+  //refreshMapMedallions();
+  updateGridItemAll();
+  refreshChests();
+
+  for(k=0; k<dungeons.length; k++){
+      if(trackerData.dungeonchests[k])
+          document.getElementById("dungeon"+k).className = "mapspan dungeon " + dungeons[k].canGetChest();
+      else
+          document.getElementById("dungeon"+k).className = "mapspan dungeon opened";
+  }
+
+  updateMap();
+}
+
+function confirmSaveConfigToFirebase() {
+    var confirm = window.confirm("Do you want to push your configuration to all other users of your tracker? This will overwrite their settings. (Use this to get a remote browser to match how this browser appears.)");
+    if(confirm) {
+        saveConfigToFirebase();
+    }
 }
 
 function preloader() {
-    for (item in items) {
-        if((typeof items[item]) == "boolean") {
+    for (item in trackerData.items) {
+        if((typeof trackerData.items[item]) == "boolean") {
             var img = new Image();
-            img.src = "images/" + item + ".png";
+            img.src = "" + item + ".png";
         }
         else{
             for (i = itemsMin[item]; i < itemsMax[item]; i++) {
                 var img = new Image();
-                img.src = "images/" + item + i + ".png";
+                img.src = "" + item + i + ".png";
             }
         }
     }
 
     for (medallion in dungeonImg) {
         var img = new Image();
-        img.src = "images/" + dungeonImg[medallion] + ".png";
+        img.src = "" + dungeonImg[medallion] + ".png";
     }
 }
 function addLoadEvent(func) {

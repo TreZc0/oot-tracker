@@ -70,7 +70,7 @@ var defaultItemGrid = [
 ]
 
 
-var items = {
+var itemsInit = {
     Bow:0,
     Hookshot:0,
     Hammer:false,
@@ -126,6 +126,40 @@ var items = {
     LightMedallion:false,
 
     blank: false
+};
+
+var dungeonchestsInit = {
+    0: 7,
+    1: 11,
+    2: 22,
+    3: 20,
+    4: 14,
+    5: 18,
+    6: 7,
+    7: 15,
+    8: 4,
+    9: 5,
+    10: 14,
+    11: 15,
+    12: 11,
+    13: 23,
+    14: 7,
+    15: 11,
+    16: 6,
+    17: 10    
+}
+
+var medallionsInit = [];
+medallionsInit = {
+        ForestMedallion: 0,
+        FireMedallion: 0,
+        WaterMedallion: 0,
+        ShadowMedallion: 0,
+        SpiritMedallion: 0,
+        LightMedallion: 0,
+        KokiriEmerald: 0,
+        GoronRuby: 0,
+        ZoraSapphire: 0,
 };
 
 var itemsMin = {
