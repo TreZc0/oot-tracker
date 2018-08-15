@@ -1,4 +1,5 @@
-var dungeonImg = ['Unknown', 'Slingshot0', 'Bombs0', 'Boomerang', 'Bow0', 'Hammer', 'Hookshot0', 'HoverBoots', 'MirrorShield']
+//var dungeonImg = ['Unknown', 'Slingshot0', 'Bombs0', 'Boomerang', 'Bow0', 'Hammer', 'Hookshot0', 'HoverBoots', 'MirrorShield']
+var dungeonImg = ['Unknown', 'dungeon1', 'dungeon2', 'dungeon3', 'dungeon4', 'dungeon5', 'dungeon6', 'dungeon7', 'dungeon8']
 ganonlogic = 'Open';
 
 var itemGrid = [];
@@ -864,7 +865,9 @@ function enterPasscode() {
 
 function createRoom() {
     var editors = {};
-    var passcode = document.getElementById('passcodeInput').value;
+    if (passwordURL != "")
+        var passcode = passwordURL;
+    else var passcode = document.getElementById('passcodeInput').value;
     editors[uid] = true;
     rootRef.set({
         owner: uid,
@@ -921,7 +924,9 @@ function initTracker() {
     });
     rootRef.child('config').on('value', function(snapshot) {
        if(snapshot.val()) updateConfigFromFirebase(snapshot.val());
-}); 
+    });
+    console.log(rootRef.child('passwordURL'));
+    console.log("test: " + passwordURL); 
 }
 
 function updateAll() {
