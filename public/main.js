@@ -7,6 +7,8 @@ var itemLayout = [];
 
 var dungeonSelect = 0;
 
+var roomCreated = false;
+
 var chestsopenedInit = [];
 for(var i = 0; i < chests.length; i++) {
     chestsopenedInit.push(false);
@@ -865,9 +867,7 @@ function enterPasscode() {
 
 function createRoom() {
     var editors = {};
-    if (passwordURL != "")
-        var passcode = passwordURL;
-    else var passcode = document.getElementById('passcodeInput').value;
+    var passcode = document.getElementById('passcodeInput').value;
     editors[uid] = true;
     rootRef.set({
         owner: uid,
@@ -909,6 +909,7 @@ function initTracker() {
         trackerData.items = snapshot.val();
         updateAll();
         document.getElementById('createRoomPanel').hidden = !!trackerData.items;
+        roomCreated = !!trackerData.items;
     });
     rootRef.child('dungeonchests').on('value', function(snapshot) {
         trackerData.dungeonchests = snapshot.val();
@@ -925,8 +926,47 @@ function initTracker() {
     rootRef.child('config').on('value', function(snapshot) {
        if(snapshot.val()) updateConfigFromFirebase(snapshot.val());
     });
-    console.log(rootRef.child('passwordURL'));
-    console.log("test: " + passwordURL); 
+
+
+    setTimeout(() => {
+        if (g_password === "")
+            return;
+
+        console.log("Override password set, handle it");
+
+        if (roomCreated == false) //create room
+        {
+            console.log("attempt to create room");
+
+            var editors = {};
+            editors[uid] = true;
+
+            rootRef.set({
+                owner: uid,
+                editors: editors,
+                passcode: g_password,
+                items: itemsInit,
+                dungeonchests: dungeonchestsInit,
+                medallions: medallionsInit,
+                chestsopened: chestsopenedInit
+            });
+
+            console.log("Created new room due password set in url");
+        }
+        else //add to editors if room already exists
+        {
+            rootRef.child('editors').child(uid).set(g_password, function(error) {
+                if(error) {
+                    console.log("Did not add to editors on page load");
+                    console.log(error);
+                }
+                else {
+                    console.log("Added to editors successfully due password set in url");
+                }
+            });
+        }
+
+    }, 6000);
 }
 
 function updateAll() {
