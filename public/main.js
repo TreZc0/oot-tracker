@@ -668,16 +668,16 @@ function updateMap() {
 function itemConfigClick (sender) {
     var item = sender.id;
 
-    if (trackerOptions.trackerOptions.selected.item) {
-        document.getElementById(trackerOptions.trackerOptions.selected.item).style.border = '0px';
+    if (trackerOptions.selected.item) {
+        document.getElementById(trackerOptions.selected.item).style.border = '0px';
         sender.style.border = '3px solid yellow';
-        trackerOptions.trackerOptions.selected = {item:item};	
-    } else if (trackerOptions.trackerOptions.selected.row !== undefined) {
-        itemGrid[trackerOptions.trackerOptions.selected.row][trackerOptions.trackerOptions.selected.col]['item'].style.border = '1px solid white';
-        var old = itemLayout[trackerOptions.trackerOptions.selected.row][trackerOptions.trackerOptions.selected.col];
+        trackerOptions.selected = {item:item};	
+    } else if (trackerOptions.selected.row !== undefined) {
+        itemGrid[trackerOptions.selected.row][trackerOptions.selected.col]['item'].style.border = '1px solid white';
+        var old = itemLayout[trackerOptions.selected.row][trackerOptions.selected.col];
 
         if (old == item) {
-            trackerOptions.trackerOptions.selected = {};
+            trackerOptions.selected = {};
             return;
         }
 
