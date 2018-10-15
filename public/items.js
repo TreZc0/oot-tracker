@@ -4,6 +4,7 @@ var defaultItemGrid = [
         "Hookshot",
         "Hammer",
         "Bombs",
+        "Bombchu",
         "Scale",
         "Glove"
     ],
@@ -13,17 +14,17 @@ var defaultItemGrid = [
         "MirrorShield",
         "ZoraTunic",
         "GoronTunic",
-        "IronBoots",
-        "HoverBoots"
+        "Magic"
+
     ],
     [
+        "Spells",
         "Dins",
         "Farores",
         "Nayrus",
-        "Magic",
-        "Fire",
         "Ice",
-        "Light"
+        "Arrows",
+        "Boots"
     ],
     [
         "Slingshot",
@@ -77,12 +78,15 @@ var itemsInit = {
     Slingshot:0,
     Boomerang:false,
     Bombs:0,
+    Bombchu:false,
     Lens:false,
     Dins:false,
     Farores:false,
     Nayrus:false,
-    Fire:false,
+    Spells: 0,
+    Arrows: 0,
     Ice:false,
+    Fire:false,
     Light:false,
     Ocarina:1,
     Bottle:0,
@@ -96,6 +100,7 @@ var itemsInit = {
     ZoraTunic:false,
     IronBoots:false,
     HoverBoots:false,
+    Boots: 0,
     Glove:0,
     Scale:0,
     StoneofAgony:false,
@@ -174,6 +179,9 @@ var itemsMin = {
     Magic:0,
     Wallet:0,
     Skulltula:0,
+    Arrows:0,
+    Boots:0,
+    Spells:0,
 };
 
 var itemsMax = {
@@ -188,4 +196,7 @@ var itemsMax = {
     Magic:2,
     Wallet:2,
     Skulltula:5,
+    Arrows:3,
+    Boots:3,
+    Spells:3,
 };
