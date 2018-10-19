@@ -1,72 +1,76 @@
 var defaultItemGrid = [
     [
-        "Bow",
-        "Hookshot",
-        "Hammer",
         "Bombs",
-        "Bombchu",
-        "Scale",
-        "Glove"
-    ],
-    [
+        "Bow",
+        "ForestMedallion",
+        "blank",
         "KokiriSword",
         "BiggoronSword",
-        "MirrorShield",
-        "ZoraTunic",
-        "GoronTunic",
-        "Magic"
+        "Bombchu"
+    ],
+    [
+        "Boomerang",
+        "Hammer",
+        "FireMedallion",
+        "blank",
+        "Skulltula",
+        "Wallet",
+        "Slingshot"
 
     ],
     [
+        "Hookshot",
         "Spells",
-        "Dins",
-        "Farores",
+        "WaterMedallion",
+        "blank",
         "Nayrus",
-        "Ice",
-        "Arrows",
-        "Boots"
+        "ZoraTunic",
+        "GoronTunic"
     ],
     [
-        "Slingshot",
-        "Boomerang",
-        "Lens",
-        "Bottle",
         "ZoraLetter",
-        "Wallet",
-        "Skulltula"
+        "Arrows",
+        "SpiritMedallion",
+        "blank",
+        "Ice",
+        "Magic",
+        "Lens"
     ],
     [
+        "MirrorShield",
+        "Glove",
+        "ShadowMedallion",
+        "blank",
+        "blank",
+        "Bottle",
+        "StoneofAgony"
+    ],
+    [
+        "Boots",
+        "Scale",
+        "LightMedallion",
+        "blank",
         "ZeldasLullaby",
         "EponasSong",
-        "SunsSong",
-        "SariasSong",
-        "SongofTime",
-        "SongofStorms"
+        "SariasSong"
     ],
     [
-        "MinuetofForest",
-        "BoleroofFire",
-        "SerenadeofWater",
-        "NocturneofShadow",
-        "RequiemofSpirit",
-        "PreludeofLight"
-    ],
-    [
-        "ForestMedallion",
-        "FireMedallion",
-        "WaterMedallion",
-        "ShadowMedallion",
-        "SpiritMedallion",
-        "LightMedallion"
-    ],
-    [
-        "blank",
-        "blank",
         "KokiriEmerald",
         "GoronRuby",
         "ZoraSapphire",
         "blank",
-        "blank"
+        "SunsSong",
+        "SongofTime",
+        "SongofStorms"
+    ],
+    [
+        "blank",
+        "MinuetofForest",
+        "BoleroofFire",
+        "SerenadeofWater",
+        "RequiemofSpirit",
+        "NocturneofShadow",
+        "PreludeofLight"
     ]
 ]
 
